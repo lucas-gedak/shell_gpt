@@ -12,7 +12,6 @@ API Key is stored locally for easy use in future runs.
 import click
 import subprocess
 
-import os
 from typing import Mapping, List
 
 import typer
