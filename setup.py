@@ -12,7 +12,7 @@ setup(
         "distro~=1.8.0",
     ],
     entry_points={
-        "console_scripts": ["gt = sgpt:cli"],
+        "console_scripts": ["sgpt = sgpt:cli"],
     },
     author="Farkhod Sadykov",
     author_email="farkhod@sadykov.dev",
