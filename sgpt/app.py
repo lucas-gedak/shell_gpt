@@ -9,6 +9,7 @@ shell commands directly from the interface.
 
 API Key is stored locally for easy use in future runs.
 """
+import os
 import click
 import subprocess
 
@@ -121,7 +122,6 @@ def main(
     else:
         collectedPrompt = make_prompt.initial(collectedPrompt, shell, code)
 
-    print(str(collectedPrompt))
     completion = get_completion(
         messages=[{"role": "user", "content": collectedPrompt}],
         temperature=temperature,
@@ -137,10 +137,11 @@ def main(
 
     typer.secho()
     if not code and shell:
-        if demo:
-            typer.echo("Shell command: " + full_completion)
-        else:
-            subprocess.run(["powershell", "-Command", full_completion])
+        if demo == False:
+            if "only PowerShell commands" in str(collectedPrompt):
+                subprocess.run(["powershell", "-Command", full_completion])
+            else:
+                os.system(full_completion)
 
 
 def entry_point() -> None:
