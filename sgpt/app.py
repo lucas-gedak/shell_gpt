@@ -46,10 +46,6 @@ def get_completion(
     )
 
 
-import click
-import typer
-
-
 @click.command()
 @click.argument("prompt", nargs=-1)
 @click.option(
@@ -90,7 +86,7 @@ def main(
     demo,
     editor,
     no_cache,
-):
+) -> None:
     collectedPrompt = " ".join(prompt)
 
     if list_chat:
@@ -145,6 +141,11 @@ def main(
             typer.echo("Shell command: " + full_completion)
         else:
             subprocess.run(["powershell", "-Command", full_completion])
+
+
+def entry_point() -> None:
+    # Python package entry point defined in setup.py
+    main()
 
 
 if __name__ == "__main__":
