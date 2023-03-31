@@ -9,7 +9,8 @@ shell commands directly from the interface.
 
 API Key is stored locally for easy use in future runs.
 """
-
+import click
+import subprocess
 
 import os
 from typing import Mapping, List
@@ -46,18 +47,53 @@ def get_completion(
     )
 
 
+import click
+import typer
+
+
+@click.command()
+@click.argument("prompt", nargs=-1)
+@click.option(
+    "--temperature",
+    "-t",
+    default=1.0,
+    type=float,
+    help="Randomness of generated output.",
+)
+@click.option(
+    "--top-probability",
+    "-p",
+    default=1.0,
+    type=float,
+    help="Limits highest probable tokens (words).",
+)
+@click.option("--chat", "-c", type=str, help="Follow conversation with id (chat mode).")
+@click.option(
+    "--show-chat", "-s", type=str, help="Show all messages from provided chat id."
+)
+@click.option("--list-chat", "-l", is_flag=True, help="List all existing chat ids.")
+@click.option("--shell", is_flag=True, help="Generate and execute shell command.")
+@click.option("--code", is_flag=True, help="Provide code as output.")
+@click.option(
+    "--demo", "-d", is_flag=True, help="Shows the shell prompt but doesn't run."
+)
+@click.option("--editor", is_flag=True, help="Open $EDITOR to provide a prompt.")
+@click.option("--no-cache", is_flag=True, help="Disable completion cache.")
 def main(
-    prompt: str = typer.Argument(None, show_default=False, help="The prompt to generate completions for."),
-    temperature: float = typer.Option(1.0, min=0.0, max=1.0, help="Randomness of generated output."),
-    top_probability: float = typer.Option(1.0, min=0.1, max=1.0, help="Limits highest probable tokens (words)."),
-    chat: str = typer.Option(None, help="Follow conversation with id (chat mode)."),
-    show_chat: str = typer.Option(None, help="Show all messages from provided chat id."),
-    list_chat: bool = typer.Option(False, help="List all existing chat ids."),
-    shell: bool = typer.Option(False, "--shell", "-s", help="Generate and execute shell command."),
-    code: bool = typer.Option(False, help="Provide code as output."),
-    editor: bool = typer.Option(False, help="Open $EDITOR to provide a prompt."),
-    cache: bool = typer.Option(True, help="Cache completion results."),
-) -> None:
+    prompt,
+    temperature,
+    top_probability,
+    chat,
+    show_chat,
+    list_chat,
+    shell,
+    code,
+    demo,
+    editor,
+    no_cache,
+):
+    collectedPrompt = " ".join(prompt)
+
     if list_chat:
         echo_chat_ids()
         return
@@ -65,11 +101,11 @@ def main(
         echo_chat_messages(show_chat)
         return
 
-    if not prompt and not editor:
+    if not collectedPrompt and not editor:
         raise MissingParameter(param_hint="PROMPT", param_type="string")
 
     if editor:
-        prompt = get_edited_prompt()
+        collectedPrompt = get_edited_prompt()
 
     if chat and OpenAIClient.chat_cache.exists(chat):
         chat_history = OpenAIClient.chat_cache.get_messages(chat)
@@ -84,15 +120,18 @@ def main(
                 f"Chat id:{chat} was initiated as code assistant, can be used with --code only"
             )
 
-        prompt = make_prompt.chat_mode(prompt, is_shell_chat, is_code_chat)
+        collectedPrompt = make_prompt.chat_mode(
+            collectedPrompt, is_shell_chat, is_code_chat
+        )
     else:
-        prompt = make_prompt.initial(prompt, shell, code)
+        collectedPrompt = make_prompt.initial(collectedPrompt, shell, code)
 
+    print(str(collectedPrompt))
     completion = get_completion(
-        messages=[{"role": "user", "content": prompt}],
+        messages=[{"role": "user", "content": collectedPrompt}],
         temperature=temperature,
         top_p=top_probability,
-        caching=cache,
+        caching=not no_cache,
         chat=chat,
     )
 
@@ -100,15 +139,14 @@ def main(
     for word in completion:
         typer.secho(word, fg="magenta", bold=True, nl=False)
         full_completion += word
+
     typer.secho()
-    if not code and shell and typer.confirm("Execute shell command?"):
-        os.system(full_completion)
-
-
-def entry_point() -> None:
-    # Python package entry point defined in setup.py
-    typer.run(main)
+    if not code and shell:
+        if demo:
+            typer.echo("Shell command: " + full_completion)
+        else:
+            subprocess.run(["powershell", "-Command", full_completion])
 
 
 if __name__ == "__main__":
-    entry_point()
+    main()
