@@ -1,3 +1,9 @@
+# Fork summary
+I've forked this to make some quick tweaks.
+1. instead of `sgpt "Hello there"` you would just do `gt Hello there`
+2. Removed the prompt confirmation when running shell scripts and added --demo or -d command to preview before running instead
+3. Fixed a problem I was having when running this on windows where it was trying to run powershell commands in cmd when using --shell
+
 # Shell GPT
 A command-line productivity tool powered by OpenAI's ChatGPT (GPT-3.5). As developers, we can leverage ChatGPT capabilities to generate shell commands, code snippets, comments, and documentation, among other things. Forget about cheat sheets and notes, with this tool you can get accurate answers right in your terminal, and you'll probably find yourself reducing your daily Google searches, saving you valuable time and effort.
 
